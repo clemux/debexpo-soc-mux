@@ -56,10 +56,10 @@ should ease their entering the Debian process.
     warnings; the bugs in the changes file's 'Closed-Bugs' section
     really belong to the package or not, etc.
 
-     If needed, the test results' models can return data from other
+    If needed, the test results' models can return data from other
     models (for example, the lintian plugin defines two models:
     LintianTest, the test's result, and LintianWarning, for
-    representing a tag reported by the ``lintian`` program.
+    representing a tag as reported by the ``lintian`` program.
 
   - I wrote another decorator, ``importercmd``, which decorates
     plugins' method to make the importer (or, later, a controller)
@@ -74,10 +74,10 @@ integer, boolean and string fields. For example, the function
 boolean, instead of explicitely using the underlying string.
 
 I call these functions 'property factories', but there probably is a
-better named for them.
+better name for them.
 
-Let's see a very simple, stripped down, example, the model for the
-``native`` plugin (which determines whether the package is native or
+Let's see a very simple and stripped down example: the model for the
+``native`` plugin (which determines whether the package is [[native or
 not).
 
 #+begin_src python
@@ -103,18 +103,29 @@ equivalent to this property:
 #+end_src
 
 Previously, the writers of plugins had to write a 'is_native' method
-decorated with @property, and test the value of the sql column
-themselves. This was especially cumbersome if they also wanted a
-setter which type-coerce the value before storing it in the database.
+decorated with @property, and explicitely coerce the string into a
+boolean. This was especially cumbersome if they also wanted a setter
+for coercing a boolean back into a string.
 
+**** Port existing plugins to the new API
+
+This was longer than I expected, but I don't think it was a waste a
+time. The results from some of these plugins will have to be taken
+into account when recommending a sponsor to an uploader, and with my
+changes the data is now easier to query.
+
+
+**** Almost done
 
 # PENDING (some of this should be finished before the end of Sunday,
 # otherwhise it will get into 'unsucesseful/for-after-gsoc tasks')
  - removed the plugin configuration switches and make
    'debexpo.plugins' a packages with several modules : qa,
    post_upload, etc.
+
  - action plugin that can be run before the package has been imported
    (getorigtarball should be one of those)
+
  - some plugins can be run at any time
 
     -> I'm not sure when. Maybe with a cron tab, or on some actions
@@ -123,100 +134,35 @@ setter which type-coerce the value before storing it in the database.
     e.g.: after the user has edited a package's tags,
     the sponsor recommendation plugin is run again
 
- - special plugin with their own controller, for viewing/editing
-   semantic metadata:
-    + debtags :: the user should be able to verify and correct the
-                 results from debtags heuristics
-    + similar packages :: the maintainer (or any reviewer?) should be
-         able to remove a package from the similar list, and that
-         should be taken into account by the sponsor-recommendation
-         plugin
-    + feedback for sponsor recommendation :: "I'm not interested in
-         sponsoring that package, remove me from the list"
 
-
-*** Debtags heuristics
-# PENDING (see
-
-  #+ maybe, otherwise after the gsoc
-  - small set of new heuristics: 'implemented in
-    python/C/C++' (at least)
-
-  #+ probably not before monday
-  - Apriori heuristics and/or xapian relevance sets for tags suggestions
 
 *** Sponsor recommendation
 
-  -
+  - in the package's page, after debianqa, potential sponsors are
+    displayed in table. Not very useful in its current state.
 
 
-** The summer of code is over, now what?
-
-I will continue working on debexpo, and probably other (related)
-parts of debian during the next months (or permanently?).
-
-My priority will of course be to finish what I've started during this
-summer of code:
-
-*** GnuPG wrapper (soon, because it is needed on mentors.d.n)
-
-   
-This not really part of the summer of code, but there is not much work
-to be done: in April I started rewriting debexpo's gnupg wrapper and
-adding a 'Debian Machine Usage Policy' agreement form using the
-former. I need to polish it, and migrate debexpo to the new API. And
-then to finish the DMUP form (almost done):
-
- - finish/improve the UI for displaying tags and similar packages
-
- - UI for editing debtags
-
-
-*** Semantic metadata, debtags
-
- - work with Enrico Zini to make debtags' heuristics easier to use
-   outside debtagsd, and release them as a new library
-
- - write a lot more of debtags heuristics
-
- - manage packaging teams, and associate each with a set of debtags,
-   for easily matching a package with potential teams
-   
-*** Sponsor preferences
-
- - extend the plugin system to allow writing small 'metadata plugins'
-   that can easily be used by sponsors to define their 'Sponsoring
-   preferences'
-
- - go through [[http://wiki.debian.org/SponsorChecklist]] and the
-   preferences linked from there. Then write plugins to standardize
-   all of those, and make it easy to determinate if a package meets
-   registered sponsors preferences.
-
-*** Sponsor recommendation
-  
-The current sponsor recommendation is more a proof-of-concept than a
-complete new feature and probably will not be very useful to new
-maintainers. I need to improve the UI and the underlying algorithms.
 
    
 
-** Short summary for the summer 
-
-# this will be written up in a few sentences instead of the bullet list
-# in 3-5 lines, as asked by Ana
+** Short summary for the summer
 
 *** Successful
+
+
  
  - new plugin system. This API makes it possible to store data 'in an
    almost declarative way' [I need a better qualifier for that] for
    the results of plugins, and make it accessible outside the
    plugin. With a little more magic code, some plugins won't need to
    have their own templates anymore.
+   
  - new plugin for associating tags with a package, using debtags'
    heuristics
+   
  - new plugin for finding sponsors that might be interested by a
    package
+   
  - I have written and kept up-to-date comprehensive docstrings for all
    new objects and methods (and some existings ones). This will not
    generate a perfect documentation, but improving it should be easy
@@ -241,18 +187,89 @@ maintainers. I need to improve the UI and the underlying algorithms.
 
 *** Unsuccessful, not finished or needs polishing
 
+
+ - Debtags :: I had planned to write new heuristics to gather a richer
+              set of metadata for uploaded packages, but I did not
+              have the time.
+
+ - Sponsor recommendation :: this was the ultimate goal of the
+      project, and it will not be ready on the final deadline (not
+      sure it's really a failure, though, because the new plugin
+      architecture should make it easy to improve my proof-of-concept
+      code).
+
+ - UI :: I have not designed a nice UI for querying semantic metadata
+         from packages
+
  - Documentation :: Most of the code has good docstrings, but they
                     probably are not formatted correctly for sphinx
                     and they could be improved so that the arguments
-                    and return types are explicitely stated
+                    and return types are explicitely stated. Also, I
+                    wanted to write a few HOWTOs (writing new plugins,
+                    adding a new model to debexpo's database, ...)
 
- - Sponsor recommendation :: this was the ultimate goal of the
-      project, and it will not be ready (not sure it's really a
-      failure) :(
 
-# that's not all
- - ... 
+** The summer of code is over, now what?
+
+I will continue working on debexpo, and probably other (related)
+parts of debian during the next months (or permanently?).
+
+My priority will of course be to finish what I've started during this
+summer of code:
+
+*** GnuPG wrapper (soon, because it is needed on mentors.d.n)
+
    
+This not really part of the summer of code, but there is not much work
+to be done: in April I started rewriting debexpo's gnupg wrapper and
+adding a 'Debian Machine Usage Policy' agreement form using the
+former. I need to polish it, and migrate debexpo to the new API. And
+then to finish the DMUP form (almost done):
+
+ - finish/improve the UI for displaying tags and similar packages
+
+ - UI for editing debtags
+
+*** Plugin API
+
+ - New type of plugins, with their own controller, for viewing/editing
+   semantic metadata:
+    + debtags :: the user should be able to verify and correct the
+                 results from debtags heuristics
+    + similar packages :: the maintainer (or any reviewer?) should be
+         able to remove a package from the similar list, and that
+         should be taken into account by the sponsor-recommendation
+         plugin
+    + feedback for sponsor recommendation :: "I'm not interested in
+         sponsoring that package, remove me from the list"
+
+
+*** Semantic metadata, debtags
+
+ - work with Enrico Zini to make debtags' heuristics easier to use
+   outside debtagsd, and release them as a new library
+
+ - write a lot more debtags heuristics
+
+ - manage packaging teams, and associate each with a set of debtags,
+   for easily matching a package with potential teams
+   
+*** Sponsor preferences
+
+ - extend the plugin system to allow writing small 'metadata plugins'
+   that can easily be used by sponsors to define their 'Sponsoring
+   preferences'. 
+
+ - go through [[http://wiki.debian.org/SponsorChecklist]] and the
+   preferences linked from there. Then write plugins to standardize
+   all of those, and make it easy to determinate if a package meets a
+   registered sponsor's preferences.
+
+*** Sponsor recommendation
+  
+The current sponsor recommendation is more a proof-of-concept than a
+complete new feature and probably will not be very useful to new
+maintainers. I need to improve the UI and the underlying algorithms.
 
 ** What I gained thanks to the Summer of Code
 
