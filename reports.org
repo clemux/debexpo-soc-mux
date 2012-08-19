@@ -220,15 +220,13 @@ summer of code:
 *** GnuPG wrapper (soon, because it is needed on mentors.d.n)
 
    
-This not really part of the summer of code, but there is not much work
-to be done: in April I started rewriting debexpo's gnupg wrapper and
-adding a 'Debian Machine Usage Policy' agreement form using the
-former. I need to polish it, and migrate debexpo to the new API. And
-then to finish the DMUP form (almost done):
+This was not really part of this summer of code project, but there is
+not much work left and:
 
- - finish/improve the UI for displaying tags and similar packages
-
- - UI for editing debtags
+In April I started rewriting debexpo's gnupg wrapper and adding a
+'Debian Machine Usage Policy' agreement form using the former. I need
+to polish it, and migrate debexpo to the new API. And then to finish
+the DMUP form (almost done):
 
 *** Plugin API
 
@@ -253,7 +251,7 @@ then to finish the DMUP form (almost done):
 
  - manage packaging teams, and associate each with a set of debtags,
    for easily matching a package with potential teams
-   
+
 *** Sponsor preferences
 
  - extend the plugin system to allow writing small 'metadata plugins'
