@@ -25,7 +25,7 @@ this is the fifth and last bi-weekly report on my Summer of Code project
 'Semantic Package Review Interface for mentors.debian.net'.
 
 My project aims to extract metadata from packages submitted to
-mentors.d.n[10], and use this data to match a mackage with a potential
+mentors.d.n[10], and use this data to match a package with a potential
 sponsor. Since a lot of packages get stuck in the mentoring process
 because their maintainers have difficulty finding a sponsor, this
 should ease their entering the Debian process.
@@ -40,7 +40,7 @@ should ease their entering the Debian process.
  store data from semantic plugins properly, so I don't have to rewrite
  them later.
 
-**** Various changes making the plugins' code less verbose
+**** Various changes to make the plugins' code less verbose
 
   - the PluginResult subclasses now guess their 'entity name', used in
     the inheritance scheme to associate a SQL table with the right
@@ -52,7 +52,7 @@ should ease their entering the Debian process.
 
     I should explain what I mean by 'test result': QA plugins
     typically determine wether a package passes or fails some
-    test. For example : the package is lintian clean / has lintian
+    test. For example: the package is lintian clean / has lintian
     warnings; the bugs in the changes file's 'Closed-Bugs' section
     really belong to the package or not, etc.
 
@@ -120,7 +120,7 @@ changes the data is now easier to query.
 # PENDING (some of this should be finished before the end of Sunday,
 # otherwhise it will get into 'unsucesseful/for-after-gsoc tasks')
  - removed the plugin configuration switches and make
-   'debexpo.plugins' a packages with several modules : qa,
+   'debexpo.plugins' a packages with several modules: qa,
    post_upload, etc.
 
  - action plugin that can be run before the package has been imported
@@ -166,7 +166,7 @@ changes the data is now easier to query.
  - I have written and kept up-to-date comprehensive docstrings for all
    new objects and methods (and some existings ones). This will not
    generate a perfect documentation, but improving it should be easy
-   and will mostly be a matter of formating.
+   and will mostly be a matter of formatting.
 
 # PENDING/UNSURE: will be merged either in successful, unsuccessful,
 # or in post-gsoc ideas, before sending the report
@@ -281,7 +281,7 @@ access, among others).
 This project introduced me to sqlalchemy and pylons, and more
 generally to web development.
 
-I am more familiar with debian and its packaging system, and I am now
+I am now more familiar with debian and its packaging system, and I am now
 motivated for fixing bugs in packages or creating new packages when I
 miss something, instead of waiting for someone to do it for me and
 installing software without APT.
