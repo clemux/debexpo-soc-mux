@@ -1,0 +1,452 @@
+* Penultimate report: Semantic Package Review Interface for mentors.debian.net
+
+Hi,
+
+this is the fourth bi-weekly report on my Summer of Code project
+'Semantic Package Review Interface for mentors.debian.net'.
+
+My project aims to extract metadata from packages submitted to
+mentors.d.n[10], and use this data to match a mackage with a potential
+sponsor. Since a lot of packages get stuck in the mentoring process
+because their maintainers have difficulty finding a sponsor, this
+should ease their entering the Debian process.
+
+
+
+
+** New plugin API for debexpo's importer
+
+Last report, I mentioned an attempt at refactoring of the importer;
+unfortunately I had to give up because my changes were not a clear
+improvement and this was taking too much time compared its usefulness.
+
+Thus, I only applied changes as small as possible to the importer, and
+managed to integrate the new plugin API. Moreover, I have improved the
+model for accessing the stored plugin results. Using sqlalchemy's
+"association proxy"[20], I managed to represent the data of a plugin
+result as a dictionary-like object. I also switched to the declarative
+API. Both of these changes made the plugins look a lot nicer than with
+the former API: [30]
+
+I can't resist from giving a little example for the access to the
+plugin results, since it looks so nice:
+
+#+begin_src python
+  In [4]: q = meta.session.query(PluginResult)
+  In [5]: q = q.filter_by(package_version_id = 15)
+  In [6.: for result in q.all():
+      print result,
+      '(Severity: %d)' % result.severity,
+      '--- Plugin: %s' % result.plugin,
+      '--- Raw data: ', result._data
+
+      Package is not native (Severity: 1) --- Plugin: native --- Raw data:  {u'severity': u'1', u'native': u'false'}
+      Buildsystem: Package uses debhelper (Severity: 0) --- Plugin: buildsystem --- Raw data:  {u'buildsystem': u'debhelper'}
+
+  In [8]: q = q.filter_by(entity='native_test')
+  In [10]: r = q.one()
+  In [12]: r['native']
+  Out[12]: u'false'
+  In [14]: r.is_native          # property added to the model
+  Out[14]: False
+  In [15]: r['native'] = 'true' # this will also update the database object
+  In [16]: r.is_native
+  Out[16]: True
+#+end_src                             .
+
+
+** Debtags and similar packages
+
+Using this new API, I wrote a new plugin for applying debtags
+heuristics to new packages[40]. To this end, I extracted the relevant
+module from debtagsd [50] (the application behind debtags.d.n) into a
+temporary github repository[60] (added in debexpo/lib as a
+submodule). I'll have talk about these heuristics with Enrico Zini,
+since he suggested we release those heuristics separately from
+debtagsd. For packages already in debian, the plugin can also retrieve
+tags from the debtags database.
+
+Then, I wrote a small wrapper to the python-xapian for querying
+apt-xapian-index [70]. It might be useful for other people, and maybe
+it could also be extended and released separately . I'll look into
+that once the summer of code is over.
+
+Using this wrapper, I wrote a new plugin for finding packages similar
+to the one being uploaded to debexpo [80]. With a proper tokenization
+(compared to my first attempt in June) of the package's description,
+the results were surprisingly good, even before I added the set of
+tags to the xapian query. The wrapper in debexpo/lib/axi.py is able to
+add tags to a query, but I haven't updated the plugin to use this
+yet. Indeed, I need to improve the plugin API first, so that a plugin
+can easily access another one's results: the plugin manager will have
+to know about plugin inter-dependency.
+
+** Next
+
+
+After I achieved that, I put the semantic metadata stuff aside and got
+back to the plugin system. Indeed, even though it works relatively
+well for my new plugins, I have not updated the existing plugins to
+the new API, and so I have started that, in order to merge the git
+branch 'plugin-api' soon. I have stumbled upon some design issues with
+the plugins: it is not trivial to migrate the plugins' existing mako
+templates; I have started to make some changes to the template
+rendering code, and I believe I have a good idea how to do it quickly.
+
+
+Some of the remaining tasks:
+
+Debtags:
+
+ - automatically suggest tags, using for example xapian's 'relevance
+   sets' [85], or the apriori[90] tag recommendation from debtagsd for
+   automatically finding more tags
+
+ - write new heuristics to complete the existing ones: for example,
+   add other languages than perl for implemented-in tags
+
+ - to get the best results while writing as little heuristics as
+   possible, I'll try to use apriori results from debtags; they give
+   stats like this: 93% of package with tags (uitoolkit::qt,
+   interface::x11) also have tag x11::application
+
+ - new controller and UI allowing the user to check/add/remove the
+   tags
+
+Plugin system:
+
+ - update the templates to display the plugin results
+
+ - allow plugins to depend on others
+
+ - allow plugins to be run any time, after certain actions from the
+   user (example: run the similar packages plugin after the user has
+   edited tags)
+
+Similar packages plugin:
+
+ - add results from the debtags plugin to the xapian query
+
+ - nice template for displaying those in the package info page
+
+Sponsor recommendation (the ultimate goal of this GSoC):
+
+ - new plugin, using packages to recommend sponsor to the uploader: their
+   maintainers with an account on mentors.d.n are kept as potential
+   sponsors for the package
+
+ - new UI: allow sponsors to select some tags as interesting
+
+ - use this data to improve the sponsor recommendation. Example: a
+   sponsor designates the debtag 'implemented-in::python' as
+   interesting. Then, when a python-based package is uploaded, if the
+   sponsor maintains a similar package, the increased.
+
+ - new UI: help the new contributor to contact the appropriate
+   sponsor, using the potential sponsors from the plugin
+   
+
+** Conclusion
+
+Compared to my initial schedule, I am clearly very late: the last
+month was supposed to be about UI development, bug squashing and
+documentation writing.
+
+Even though this schedule was not realistic and I had to change my
+plan after the initial two weeks, I still think I should have made more
+progress by now: I thought I would have implemented the quite simply
+strategy 'find similar packages with xapian, keep their maintainers as
+possible sponsors' in a few weeks maximum and could then have spent a
+lot of time on semantic metadata extraction and improving the sponsor
+recommendation strategy.
+
+I a few ideas for why I did not manage to do it as quickly as I
+wanted. First, hacking into debexpo's existing codebase was not always
+easy. I spent a fair amount of time trying to understand the web
+application's code, often having to read pylons and sqlalchemy
+documentation extensively.
+
+Adding features without breaking anything was another challenge, and
+some bugs took hours or days to figure out, especially when they were
+due to existing bugs in debexpo.
+
+I also wasted time because of bad decisions: I spent too much effort
+on stuff not very useful, or at least with a low priority, like trying
+to refactor the package importer, which I had to give up after several
+days of work because it didn't get anywhere and was distracting me
+from the actual project. For the plugin API, even though the model I
+eventually designed is very nice, I should have kept the first working
+version to start the debtags work earlier. Too often have I been
+distracted from the eventual goal, because I had ideas for improving
+my code, and then read more documentation (on pylons or sqlalchemy)
+than needed.
+
+I don't think everything is negative: the plugin system really needed
+an overhaul for this project to be implemented correctly, and my
+changes seem to be real improvements. Besides, I feel confident I can
+complete the tasks described above; indeed, I should be more
+productive now that I have finished shaving those yaks (mostly
+rewriting the plugin system) / laying the foundations.
+
+I'm aware all my previous estimations turned out overtly optimistic,
+but I hope I can do all that under two weeks, finish before the soft
+deadline, and will be able to do more than those tasks.
+
+In any case, some of my plans for debexpo and debtags will have to
+wait for after the summer of code, so I will stick around to finish
+everything properly.
+
+
+* Final report: Semantic Package Review Interface for mentors.debian.net
+
+!! (This is a comment and will be submited to soc-coordination) !!
+
+Hi,
+
+this is the fifth and last bi-weekly report on my Summer of Code project
+'Semantic Package Review Interface for mentors.debian.net'.
+
+My project aims to extract metadata from packages submitted to
+mentors.d.n[10], and use this data to match a mackage with a potential
+sponsor. Since a lot of packages get stuck in the mentoring process
+because their maintainers have difficulty finding a sponsor, this
+should ease their entering the Debian process.
+
+
+** Recent work
+
+*** Plugin API
+
+ I further improved the plugin API. Maybe I shouldn't have and
+ finished the semantic metadata stuff, but I wanted to be sure I could
+ store data from semantic plugins properly, so I don't have to rewrite
+ them later.
+
+**** Various changes making the plugins' code less verbose
+
+  - the PluginResult subclasses now guess their 'entity name', used in
+    the inheritance scheme to associate a SQL table with the right
+    model
+
+  - To define a PluginResult model as the result of a QA test, we use
+    the new decorator 'test_result'. It sets an attribute to the
+    class, that will be checked by the plugin when loading the model.
+
+    I should explain what I mean by 'test result': QA plugins
+    typically determine wether a package passes or fails some
+    test. For example : the package is lintian clean / has lintian
+    warnings; the bugs in the changes file's 'Closed-Bugs' section
+    really belong to the package or not, etc.
+
+     If needed, the test results' models can return data from other
+    models (for example, the lintian plugin defines two models:
+    LintianTest, the test's result, and LintianWarning, for
+    representing a tag reported by the ``lintian`` program.
+
+  - I wrote another decorator, ``importercmd``, which decorates
+    plugins' method to make the importer (or, later, a controller)
+    call them when importing data from a package
+
+
+**** 'Property factories'
+
+PluginResult models can define automatically generated properties for
+integer, boolean and string fields. For example, the function
+``bool_field will return a property for reading/writing a field as a
+boolean, instead of explicitely using the underlying string.
+
+I call these functions 'property factories', but there probably is a
+better named for them.
+
+Let's see a very simple, stripped down, example, the model for the
+``native`` plugin (which determines whether the package is native or
+not).
+
+#+begin_src python
+  @test_result
+  class NativeTest(PluginResult):
+      is_native = bool_field('native')
+  
+      def __str__(self):
+          return 'Package is %s native' % ('' if self.is_native else 'not')
+#+end_src
+
+The ``bool_field`` function, defined in debexpo.plugins.api, is roughly
+equivalent to this property:
+
+#+begin_src python
+  def fset(instance, value):
+      instance['native'] = 'true' if value else 'false'
+  
+  is_native = property(
+      lambda self: True if self.get('native', 'false') else False, # getter
+      fset)                                                        # setter
+  
+#+end_src
+
+Previously, the writers of plugins had to write a 'is_native' method
+decorated with @property, and test the value of the sql column
+themselves. This was especially cumbersome if they also wanted a
+setter which type-coerce the value before storing it in the database.
+
+  - !! pending, trivial(?) !! 
+
+  - !! pending !! removed the plugin configuration switches and make
+    'debexpo.plugins' a packages with several modules : qa,
+    post_upload, etc.
+
+  - !! pending !! action plugin that can be run before the package has
+    been imported
+
+  - !! pending !! some plugins can be run at any time
+
+    -> I'm not sure when. Maybe with a cron tab, or on some actions
+    from the users.
+
+    e.g.: after the user has edited a package's tags,
+    the sponsor recommendation plugin is run again
+
+  - !! pending !! special plugin with their own controller, for
+    viewing/editing semantic metadata (debtags, ...)
+
+
+*** Debtags heuristics
+  - !! maybe, pending !! small set of new heuristics: 'implemented in
+    python/C/C++' (at least)
+    
+  - !! probably not, will be done after the gsoc !! Apriori heuristics
+
+*** Sponsor recommendation
+
+  -
+
+** The summer of code is over, now what?
+
+I will continue working on debexpo, and probably other (related)
+parts of debian during the next months (or permanently?).
+
+My priority will of course be to finish what I've started during this
+summer of code:
+
+*** GnuPG wrapper (soon, because it is needed on mentors.d.n)
+
+   
+This not really part of the summer of code, but there is not much work
+to be done: in April I started rewriting debexpo's gnupg wrapper and
+adding a 'Debian Machine Usage Policy' agreement form using the
+former. I need to polish it, and migrate debexpo to the new API. And
+then to finish the DMUP form (almost done):
+
+ - finish/improve the UI for displaying tags and similar packages
+
+ - UI for editing debtags
+
+
+*** Semantic metadata, debtags
+
+ - work with Enrico Zini to make debtags' heuristics easier to use
+   outside debtagsd, and release them as a new library
+
+ - write a lot more of debtags heuristics
+
+ - manage packaging teams, and associate each with a set of debtags,
+   for easily matching a package with potential teams
+   
+*** Sponsor preferences
+
+ - extend the plugin system to allow writing small 'metadata plugins'
+   that can easily be used by sponsors to define their 'Sponsoring
+   preferences'
+
+ - go through [[http://wiki.debian.org/SponsorChecklist]] and the
+   preferences linked from there. Then write plugins to standardize
+   all of those, and make it easy to determinate if a package meets
+   registered sponsors preferences.
+
+*** Sponsor recommendation
+  
+The current sponsor recommendation is more a proof-of-concept than a
+complete new feature and probably will not be very useful to new
+maintainers. I need to improve the UI and the underlying algorithms.
+
+   
+
+** Short summary for the summer
+
+*** Successful
+ 
+ - new plugin system. This API makes it possible to store data in an
+   almost declarative way for the results of plugins, and make it
+   accessible outside the plugin. With a little more magic code, some
+   plugins won't need to have their own templates anymore.
+   
+ - new plugin for associating tags with a package, using debtags'
+   heuristics
+   
+ - new plugin for finding sponsors that might be interested by a
+   package
+
+ - I have written and kept up-to-date comprehensive docstrings for all
+   new objects and methods (and some existings ones). This will not
+   generate a perfect documentation, but improving it should be easy
+   and will mostly be a matter of formating.
+
+!! Pending: (will merge above or below before sending the report) !!
+
+ ~ automatic tags from debtags (almost)
+ 
+ ? allow users to add/remove tags themselveves
+ 
+ ~ display similar packages (almost)
+ 
+ ~ automatic sponsor recommendation (proof-of-concept: easy. Not sure
+ the results will be acceptable)
+
+Not finished/complete:
+ - I have started taking notes for some howtos
+ - ...
+
+
+** What I gained thanks to the Summer of Code
+
+My work has served to improve debexpo/mentors.d.n (or at least, I hope
+it did!), but it was also very positive for me:
+
+First of all, I've learnt a lot about python development, particulary
+about Python's object layer (inheritance, magic methods, attributes
+access, among others). 
+
+This project introduced me to sqlalchemy and pylons, and more
+generally to web development.
+
+I am more familiar with debian and its packaging system, and I am now
+motivated for fixing bugs in packages or creating new packages when I
+miss something, instead of waiting for someone to do it for me and
+installing software without APT.
+
+
+  
+
+
+
+* Footnotes
+
+[10] [http://mentors.debian.net/]
+
+[20] [http://docs.sqlalchemy.org/en/rel_0_7/orm/extensions/associationproxy.html]
+
+[30] [http://anonscm.debian.org/gitweb/?p=debexpo/debexpo.git;a=blob;f=debexpo/plugins/native.py;hb=refs/heads/plugin-api]
+
+[40] [http://anonscm.debian.org/gitweb/?p=debexpo/debexpo.git;a=blob;f=debexpo/plugins/debtags.py;hb=semantic-review]
+
+[50] [http://anonscm.debian.org/gitweb/?p=debtags/debtagsd.git;a=summary]
+
+[60] [https://github.com/clemux/debtags-heuristics]
+
+[70] [http://www.enricozini.org/sw/apt-xapian-index/]
+
+[80] [http://anonscm.debian.org/gitweb/?p=debexpo/debexpo.git;a=blob;f=debexpo/plugins/similar.py;hb=semantic-review]
+
+[85] [http://www.enricozini.org/2007/debtags/axi-query-expand/]
+
+[90] [http://en.wikipedia.org/wiki/Apriori_algorithm]
