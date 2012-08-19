@@ -16,7 +16,8 @@
 
 * Final report: Semantic Package Review Interface for mentors.debian.net
 
-!! (This is a comment and will be submited to soc-coordination) !!
+# (This is a comment and will not be exported to the soc-coordination
+# mail)
 
 Hi,
 
@@ -106,16 +107,15 @@ decorated with @property, and test the value of the sql column
 themselves. This was especially cumbersome if they also wanted a
 setter which type-coerce the value before storing it in the database.
 
-  - !! pending, trivial(?) !! 
 
-  - !! pending !! removed the plugin configuration switches and make
-    'debexpo.plugins' a packages with several modules : qa,
-    post_upload, etc.
-
-  - !! pending !! action plugin that can be run before the package has
-    been imported
-
-  - !! pending !! some plugins can be run at any time
+# PENDING (some of this should be finished before the end of Sunday,
+# otherwhise it will get into 'unsucesseful/for-after-gsoc tasks')
+ - removed the plugin configuration switches and make
+   'debexpo.plugins' a packages with several modules : qa,
+   post_upload, etc.
+ - action plugin that can be run before the package has been imported
+   (getorigtarball should be one of those)
+ - some plugins can be run at any time
 
     -> I'm not sure when. Maybe with a cron tab, or on some actions
     from the users.
@@ -123,19 +123,32 @@ setter which type-coerce the value before storing it in the database.
     e.g.: after the user has edited a package's tags,
     the sponsor recommendation plugin is run again
 
-  - !! pending !! special plugin with their own controller, for
-    viewing/editing semantic metadata (debtags, ...)
+ - special plugin with their own controller, for viewing/editing
+   semantic metadata:
+    + debtags :: the user should be able to verify and correct the
+                 results from debtags heuristics
+    + similar packages :: the maintainer (or any reviewer?) should be
+         able to remove a package from the similar list, and that
+         should be taken into account by the sponsor-recommendation
+         plugin
+    + feedback for sponsor recommendation :: "I'm not interested in
+         sponsoring that package, remove me from the list"
 
 
 *** Debtags heuristics
-  - !! maybe, pending !! small set of new heuristics: 'implemented in
+# PENDING (see
+
+  #+ maybe, otherwise after the gsoc
+  - small set of new heuristics: 'implemented in
     python/C/C++' (at least)
-    
-  - !! probably not, will be done after the gsoc !! Apriori heuristics
+
+  #+ probably not before monday
+  - Apriori heuristics and/or xapian relevance sets for tags suggestions
 
 *** Sponsor recommendation
 
   -
+
 
 ** The summer of code is over, now what?
 
@@ -188,41 +201,58 @@ maintainers. I need to improve the UI and the underlying algorithms.
 
    
 
-** Short summary for the summer
+** Short summary for the summer 
+
+# this will be written up in a few sentences instead of the bullet list
+# in 3-5 lines, as asked by Ana
 
 *** Successful
  
- - new plugin system. This API makes it possible to store data in an
-   almost declarative way for the results of plugins, and make it
-   accessible outside the plugin. With a little more magic code, some
-   plugins won't need to have their own templates anymore.
-   
+ - new plugin system. This API makes it possible to store data 'in an
+   almost declarative way' [I need a better qualifier for that] for
+   the results of plugins, and make it accessible outside the
+   plugin. With a little more magic code, some plugins won't need to
+   have their own templates anymore.
  - new plugin for associating tags with a package, using debtags'
    heuristics
-   
  - new plugin for finding sponsors that might be interested by a
    package
-
  - I have written and kept up-to-date comprehensive docstrings for all
    new objects and methods (and some existings ones). This will not
    generate a perfect documentation, but improving it should be easy
    and will mostly be a matter of formating.
 
-!! Pending: (will merge above or below before sending the report) !!
+# PENDING/UNSURE: will be merged either in successful, unsuccessful,
+# or in post-gsoc ideas, before sending the report
+# ~ -> might be easy/quick to do
+# ? -> maybe, otherwise during the coming weeks
 
- ~ automatic tags from debtags (almost)
- 
- ? allow users to add/remove tags themselveves
- 
- ~ display similar packages (almost)
- 
- ~ automatic sponsor recommendation (proof-of-concept: easy. Not sure
- the results will be acceptable)
+ - default templates for plugins with data trivial to display
+(trivial, I can do it before or just after sending the report)
+ - ~ automatic tags from debtags (mostly done, but it needs more
+   rules)
+ - ? allow uploaders to add/remove tags themselveves
+#    ^ probably too long to implement correctly, will be moved below
+ - ~ display similar packages (almost done, just need a PluginResult
+   subclass and the associated template)
+ - ~ automatic sponsor recommendation (proof-of-concept: easy. But the
+   results might not be useful. The plugin API should make it
+   easy to improve, though)
 
-Not finished/complete:
- - I have started taking notes for some howtos
- - ...
+*** Unsuccessful, not finished or needs polishing
 
+ - Documentation :: Most of the code has good docstrings, but they
+                    probably are not formatted correctly for sphinx
+                    and they could be improved so that the arguments
+                    and return types are explicitely stated
+
+ - Sponsor recommendation :: this was the ultimate goal of the
+      project, and it will not be ready (not sure it's really a
+      failure) :(
+
+# that's not all
+ - ... 
+   
 
 ** What I gained thanks to the Summer of Code
 
@@ -241,6 +271,7 @@ motivated for fixing bugs in packages or creating new packages when I
 miss something, instead of waiting for someone to do it for me and
 installing software without APT.
 
+# ...
 
   
 
